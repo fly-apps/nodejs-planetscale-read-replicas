@@ -99,7 +99,7 @@ We've added a few files to make this sample app ready to run on Fly: a `Dockerfi
 
 1. Update the app's name at the top to one of your choice `app = "your-name-here"`.
 
-2. Update the region to one nearest _your_ database: `PRIMARY_REGION = "lhr"`. We created _our_ database in `eu-west`. But Fly uses different region names than Planetscale. And so you need to use the Fly region you would want your primary Planetscale database to always be used from. As an example, let's say you have a Planetscale database in _eu-west-1_. You plan on having a Fly app deployed to `lhr` and `iad`. In the case you would set `PRIMARY_REGION = "lhr"` in the `fly.toml`. As that is the closest Fly region to the primary database's region (and where writes will be replayed).
+2. Update the region to the one nearest _your_ primary database: `PRIMARY_REGION = "lhr"`. We created _our_ database in `eu-west`. But Fly uses different region names than Planetscale. And so you need to use the Fly region you would want your primary Planetscale database to always be used from. As an example, let's say you have a Planetscale database in _eu-west-1_. You plan on having a Fly app deployed to `lhr` and `iad`. You would set `PRIMARY_REGION = "lhr"` in the `fly.toml`. As that is the closest Fly region to the primary database's region.
 
 To deploy the app, run `fly launch` from the application's directory.
 
