@@ -1,0 +1,14 @@
+# 1. Ignore everything:
+**
+
+# 2. Allow only these:
+!server.js
+!database.js
+!package.json
+!package-lock.json
+
+# 3. In case allow directories, ignore any unnecessary files in them:
+**/*~
+**/*.log
+**/.DS_Store
+**/Thumbs.db

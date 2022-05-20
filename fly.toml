@@ -1,0 +1,30 @@
+app = "fly-nodejs-planetscale-read-replicas"
+
+[env]
+NODE_ENV = "production"
+PORT = 8080
+PRIMARY_REGION = "lhr"
+
+[[services]]
+internal_port = 8080
+protocol = "tcp"
+
+[services.concurrency]
+hard_limit = 50
+soft_limit = 25
+
+[[services.http_checks]]
+interval = "5s"
+method = "get"
+path = "/"
+protocol = "http"
+timeout = "2s"
+tls_skip_verify = true
+
+[[services.ports]]
+handlers = ["tls", "http"]
+port = 443
+
+[[services.tcp_checks]]
+interval = "5s"
+timeout = "2s"
