@@ -1,6 +1,6 @@
 # fly-nodejs-planetscale-read-replicas
 
-A sample Express app for the [Fly platform](https://fly.io) which uses a [Planetscale](https://planetscale.com) database. Planetscale is a MySQL-compatible serverless database. It now supports read-replicas so you can perform low-latency reads wherever your users are located.
+A sample Express app for the [Fly platform](https://fly.io) which uses a [Planetscale](https://planetscale.com) database. Planetscale is a MySQL-compatible serverless database. It now supports read replicas so you can perform low-latency reads wherever your users are located.
 
 ## Create a database
 
@@ -188,8 +188,6 @@ If you open its _write_ page `https://your-app-here.fly.dev/write` you should se
 }
 ```
 
-When _other_ regions are added to your Fly app (below) _those_ vms will likely connect to a read-replica. And so their writes would fail (naturally). They will be replayed (using some Fly magic) _in_ the primary region. You can confirm that using `fly logs` and look for our sample app's `console.log()` message to say that is what happened: _"Replaying this attempt to write to a read-replica ..."_. You'll see that happening in a moment after scaling the app into multiple regions.
-
 ## Scaling the app
 
 So far the app has _only_ used the primary database. Since there is only _one_ vm.
@@ -257,7 +255,7 @@ Perfect! We can see from that response that the request was handled by the vm in
 Perfect! We can see from that response that the request was handled in our primary region (`lhr`). And so the write succeeded. Despite the closest database to `sea` actually being a read-only replica (as shown by our prior read). But wait ... how does this work? Well, we can see by looking at the logs for this app (with `fly logs`) ...
 
 ```
-2022-05-19T19:09:42Z app[abcdefgh] sea [info]Replaying this attempt to write to a read-replica (from Fly region: sea) in the primary Fly region: lhr
+2022-05-19T19:09:42Z app[abcdefgh] sea [info]Replaying this attempt to write to a read replica (from Fly region: sea) in the primary Fly region: lhr
 ```
 
 That line is logged by our custom error handler in `server.js`. It proves that what we planned to happen _did_ happen: the write was initially sent to the _closest_ database. But that's a read-only region. And so it failed, throwing an error. That error was caught by the handler, analysed, and matched the _write-to-a-read_ case. And so the app replayed the request _in_ the primary region (`lhr`). And that region uses the primary database. Which _can_ be written to. And so the write worked (with much lower latency).
@@ -280,7 +278,7 @@ If you try deploying the app to Fly and that fails, the most _likely_ reason is 
 
 - For this example we used the same branch for local development _and_ on Fly. In reality you would have a development branch and a separate production branch. As such, the connection string(s) in your local `.env` file would differ from the one your applicaton uses on Fly. And in fact would likely instead be a local installation of MySQL to reduce costs.
 
-- Adding additional regions in Planetscale increases the cost of storage. For example if your primary database is 10GB, adding an additional region (for a read-replica) would double the cost of storage.
+- Adding additional regions in Planetscale increases the cost of storage. For example if your primary database is 10GB, adding an additional region (for a read replica) would double the cost of storage.
 
 - Make sure to keep an eye on usage. If you exceed your included monthly allowance you are billed an additional fee:
 
