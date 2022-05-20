@@ -230,9 +230,11 @@ abcdefgh        app     2       sea     run     running 2 total, 2 passing      
 abcdefgh        app     2       lhr     run     running 2 total, 2 passing      0               1m2s ago
 ```
 
-**Note:** If you like you can run `fly logs` (and have not removed our debug log lines) you should see each vm making a choice at run-time for which database it should connect to. For example for the vm launched in `sea` _we_ saw _... the closest available database should be this one: us-west.connect.psdb.cloud_. For the vm launched in `syd` we _instead_ saw: _...the closest available database should be this one: aws-ap-southeast-2.connect.psdb.cloud_. Perfect! Each of those vms connected to the _closest_ database. You may need to adjust your region preferences (check `database.js` to see how we picked them).
+**Note:** You may want to run `fly logs`. If you have not edited our sample app to remove our debug logs, you should see each vm making a choice at run-time for which database it should connect to. For example for the vm launched in `sea` _we_ saw _... the closest available database should be this one: us-west.connect.psdb.cloud_. For the vm launched in `syd` we _instead_ saw: _...the closest available database should be this one: aws-ap-southeast-2.connect.psdb.cloud_. Perfect! Each of those vms connected to the _closest_ database. You may need to adjust your region preferences (please take a look at `database.js` to see how we picked them).
 
-Back to the test. Now those two new vms should be running, try the `/read` and `/write` again. This time look at the value of `"usingFlyRegion"` in the response to see where it was handled. If that is your primary region, the read-only regions _won't_ be used. As there is no need for them to be. So to test them you need to make a request from somewhere else, closer to one of them.
+Back to the test.
+
+Now those two new vms should be running, try the `/read` and `/write` again. This time look at the value of `"usingFlyRegion"` in the response to see where it was handled. If that is your primary region, the read-only regions _won't_ be used. As there is no need for them to be. So to test them you need to make a request from somewhere else, closer to one of them.
 
 In _our_ case, we want to make a request that will hit the Fly vm we have in the US and/or Australia. That could be done in a variety of ways. You could use an online tool. We opted to use another Fly app to simulate requests from a particular location. We had a vm in `sjc` (US). And so we connected to that vm using `fly ssh console` and ran a simple curl command:
 
