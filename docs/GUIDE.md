@@ -1,4 +1,4 @@
-Fly runs a global application platform. In seconds it can build a Docker image and run it on a fast, secure Firecracker micro-vm in one of 21 regions. [Give it a try](https://fly.io/docs/speedrun/)!
+Fly runs a global application platform. In seconds it can build a Docker image and run it on a fast, secure Firecracker micro-vm in one of 21 regions.
 
 For a long time there was a major hurdle running applications globally: the database. To do something useful, applications generally need to work with data. Store it. Process it. Return it. And do that _quickly_. If a database is in a single region, connecting to it from _that_ region is no problem. Connecting to it from the other side of _the planet_ is a problem. It's _slow_.
 
