@@ -262,13 +262,13 @@ Perfect! We can see from that response that this request worked. It was handled 
 
 That line is logged by our app's custom error handler, in `server.js`. Initially the write request was received by the closest vm to the simulated user (in the US). And that vm connected to the _closest_ database (in the US). But ... that's a read-only replica. And so that write failed, throwing an error. That error was caught by the error handler, analysed and matched. And so the app used some Fly magic to _replay_ the HTTP request _in_ the primary region (in our case that's `lhr`). And a vm in that region connects to the primary database. Which _can_ of course be written to. And so the write worked.
 
-## How does it work?
+## How does it know which database is closest?
 
 If there is only one connection string in the `DATABASE_URL`, no decision needs to be made. That is used regardless of where in the world the app is running. That would be the case if you don't have any read replicas.
 
-If there are multiple connection strings in the `DATABASE_URL`, the app needs to decide which one of them to connect to. If you take a look at our sample app's `database.js` you will see it takes a rough guess at which regions it would _prefer_ to connect to (ideally the closest). And then it sees which of those regions actually has a database. By looking for a connection string that uses a host in that region. If it can't find one, it defaults to connecting to the primary.
+If there are multiple connection strings in the `DATABASE_URL`, the app needs to decide which one of them it should connect to. If you take a look at our sample app's `database.js` you will see it takes a _rough_ guess at which regions it would _prefer_ to connect to (ideally the closest). And then it sees which of those regions actually has a database. By looking for a connection string that uses a host in that region. If it can't find one, it defaults to connecting to the primary.
 
-If your app only uses a couple of regions, it may well be simpler for you to instead have _more_ environment variables and _less_ code. You could add an environment variable per region, such as `DATABASE_URL_LHR`, `DATABASE_URL_FRA` ... and so on. And then pick the appropriate one based on the value of `FLY_REGION` that is provided at run-time as an environment variable.
+If your app only uses a couple of regions, it would probably be simpler for you to instead have _more_ environment variables and _less_ code. You could add an environment variable per region, such as `DATABASE_URL_LHR`, `DATABASE_URL_FRA` ... and so on. And then pick the appropriate one based on the value of `FLY_REGION` that is provided at run-time as an environment variable. You don't have to do it the same way we did!
 
 ## Issues
 
