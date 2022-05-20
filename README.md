@@ -123,11 +123,11 @@ You'll be asked to give the app a name. Type a name using lowercase characters a
 
 You'll be prompted to pick an organization. Since every Fly user has a personal organization, let's pick that for now.
 
-You'll be asked for the region to deploy the first vm to. Pick one closest to your primary Planetscale database (the one you set the `PRIMARY_REGION` to in the `fly.toml`). For example `lhr`.
+You'll be asked for the region to deploy the first vm to. That will be the same value you set for `PRIMARY_REGION` above. For example `lhr`.
 
 It will ask if you want a PostgreSQL database. Type _N_ (no) as you are using Planetscale for its database!
 
-Finally you are asked if you want to deploy. Type _N_ (no). Why not deploy now? This sample application expects a `DATABASE_URL` connection string to be available as a secret environment variable. Now that your app is staged on Fly we can set that. So run this command (setting its value as a comma-separated list of _all_ of the connection strings you have from Planetscale, perhaps copied directly from your `env` if you tried this locally above). The sample app expects the **first one** to be the connection string for your **primary database** (the region you created the database in). Any _subsequent_ ones are the connection strings for any read-only regions. The resulting command you need to run will look something like this. Note the comma between each of the connection strings:
+Finally you are asked if you want to deploy. Type _N_ (no). Why not deploy now? This sample application expects a `DATABASE_URL` connection string to be available as a secret environment variable. Now that your app is staged on Fly we can set that. So run this command (setting its value as a comma-separated list of _all_ of the connection strings you have from Planetscale). The sample app expects the **first one** to be the connection string for your **primary database** (the region you created the Planetscale database in). Any _subsequent_ ones are the connection strings for any read-only regions. The resulting command you need to run will look something like this. Note the comma between each of connection string:
 
 ```
 fly secrets set DATABASE_URL='mysql://your-primary-region-one,mysql://optional-for-read-region,mysql://optional-for-another-read-region'
