@@ -206,7 +206,7 @@ lhr
 Backup Region:
 ```
 
-Adjust that to permit more regions. For our test database, we made a primary in `eu-west-1` (Ireland), and two read-only regions in `us-west-2` (US) and `ap-southeast-2` (Australia). Suitably distributed to test the latency. And so we'll adjust the regions our sample Fly app can run to use roughly matching Fly regions:
+Adjust that to permit more regions. For our test database, we made a primary in `eu-west-1` (Ireland), and two read-only regions in `us-west-2` (US) and `ap-southeast-2` (Australia). Suitably distributed to test the latency. And so we'll adjust the regions our sample Fly app can run in to use roughly matching Fly regions:
 
 ```
 fly regions set lhr sea syd
@@ -218,7 +218,7 @@ Now we need to scale the app to put a vm in each of those regions:
 fly scale count 3 --max-per-region=1
 ```
 
-**Note** If you run `fly scale show` you may see `Max Per Region: Not set`. This is a known issue however the value _is_ set.
+**Note:** If you run `fly scale show` you may see `Max Per Region: Not set`. This is a known issue however the value _is_ set.
 
 Confirm the new vms have been placed by waiting a few moments and then running `fly status`. Wait a minute until all three have a status of `running`:
 
