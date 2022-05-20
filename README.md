@@ -234,18 +234,18 @@ abcdefgh        app     2       lhr     run     running 2 total, 2 passing      
 
 Back to the test.
 
-Now those two new vms should be running, try the `/read` and `/write` again. This time look at the value of `"usingFlyRegion"` in the response to see where it was handled. If that is your primary region, the read-only regions _won't_ be used. As there is no need for them to be. So to test them you need to make a request from somewhere else, closer to one of them.
+Now those two new vms are running, try calling the `https://app-name-here.fly.dev/read` and the `https://app-name-here.fly.dev/write` again. This time look at the value of `"usingFlyRegion"` in the response to see where the request was handled. If that value is your primary region (in our case that was `lhr`) any read-only regions _won't_ be used. As there is no _need_ for them to be. So to test any read-only regions you need to make a request from somewhere _else_, closer to one of the other vms.
 
-In _our_ case, we want to make a request that will hit the Fly vm we have in the US and/or Australia. That could be done in a variety of ways. You could use an online tool. We opted to use another Fly app to simulate requests from a particular location. We had a vm in `sjc` (US). And so we connected to that vm using `fly ssh console` and ran a simple curl command:
+In our case, we want to make a request that will be served by the vm we have in the US. That could be done in a variety of ways. You could use an online tool. We opted to use another Fly app we have to simulate requests from a particular location. It has a vm in the `sjc` (US) region. We connected to that vm using `fly ssh console` and ran a couple of curl commands ...
 
 #### Read
 
 ```
 #curl https://app-name-here.fly.dev/read
-#{"time":19,"usingFlyRegion":"sea","usingPrimaryRegion":false,"usingDatabaseHost":"us-west.connect.psdb.cloud","data":[{"id":9,"name":"lemon"},{"id":8,"name":"blueberry"},{"id":7,"name":"grape"}]}
+{"time":19,"usingFlyRegion":"sea","usingPrimaryRegion":false,"usingDatabaseHost":"us-west.connect.psdb.cloud","data":[{"id":9,"name":"lemon"},{"id":8,"name":"blueberry"},{"id":7,"name":"grape"}]}
 ```
 
-Perfect! We can see from that response that the request was handled by the vm in `sea` (the closest vm _this_ app has to our simulated user in `sjc`). The response shows which database it fetched the data about our fruits from: the read-only region `us-west.connect.psdb.cloud`! This confirms it didn't need to connect to the primary database, far away in Europe. A fast, low-latency read.
+Perfect! We can see from that response that this request worked. It was handled by the vm in `sea` (the closest vm _this_ app has to our simulated user in `sjc`). The response shows which database it fetched the data about our fruits from: the read-only region `us-west.connect.psdb.cloud`! This confirms it didn't need to connect to the primary database, far away in Europe. A fast, low-latency read.
 
 #### Write
 
@@ -254,21 +254,21 @@ Perfect! We can see from that response that the request was handled by the vm in
 #{"time":20,"usingFlyRegion":"lhr","usingPrimaryRegion":true,"usingDatabaseHost":"random.eu-west-3.psdb.cloud","data":"Added a row with ID 10"}
 ```
 
-Perfect! We can see from that response that the request was handled in our primary region (`lhr`). And so the write succeeded. Despite the closest database to `sea` actually being a read-only replica (as shown by our prior read). But wait ... how does this work? Well, we can see by looking at the logs for this app (with `fly logs`) ...
+Perfect! We can see from that response that this request worked. It was handled in our primary region (`lhr`). And so the write succeeded. Despite the closest database to `sea` actually being a read-only replica. But wait ... How does this work? Well, we can see by looking at the logs for this app:
 
 ```
 2022-05-19T19:09:42Z app[abcdefgh] sea [info]Replaying this attempt to write to a read replica (from Fly region: sea) in the primary Fly region: lhr
 ```
 
-That line is logged by our custom error handler in `server.js`. It proves that what we planned to happen _did_ happen: the write was initially sent to the _closest_ database. But that's a read-only region. And so it failed, throwing an error. That error was caught by the handler, analysed, and matched the _write-to-a-read_ case. And so the app replayed the request _in_ the primary region (`lhr`). And that region uses the primary database. Which _can_ be written to. And so the write worked (with much lower latency).
+That line is logged by our app's custom error handler (in `server.js`). The write was handled by its closest vm (in the US). And it connected to the _closest_ database (in the US). But that's a read-only replica. And so that write failed, throwing an error. That error was caught by the error handler, analysed and matched. And so the app using some Fly magic to _replay_ the request _in_ the primary region (`lhr`). And that region uses the primary database. Which _can_ be written to. And so the write worked. And much faster too.
 
 ## How does it work?
 
-If there is only one connection string in the `DATABASE_URL`, well no decision needs to be made. That one is used, regardless of where in the world the app is running. That would be the case if you don't have any read replicas.
+If there is only one connection string in the `DATABASE_URL`, no decision needs to be made. That is used regardless of where in the world the app is running. That would be the case if you don't have any read replicas.
 
-If there are multiple connection strings in the `DATABASE_URL`, the app needs to decide which one to connect to. In `database.js` you will see it takes a rough guess at which regions it would _prefer_ to connect to (ideally the cloest). And then it sees which of those regions actually has a database. By looking for a connection string that uses a host in that region. If it can't find one, it defaults to connecting to the primary.
+If there are multiple connection strings in the `DATABASE_URL`, the app needs to decide which one of them to connect to. If you take a look at our sample app's `database.js` you will see it takes a rough guess at which regions it would _prefer_ to connect to (ideally the closest). And then it sees which of those regions actually has a database. By looking for a connection string that uses a host in that region. If it can't find one, it defaults to connecting to the primary.
 
-If your app only uses a couple of regions, it may be simpler for you to instead have more environment variables and less code. You could add an environment variable per region, such as `DATABASE_URL_LHR`, `DATABASE_URL_FRA` ... and so on. And pick the appropriate connection string (based on the value of `FLY_REGION` that is provided at run-time as an environment variable).
+If your app only uses a couple of regions, it may well be simpler for you to instead have _more_ environment variables and _less_ code. You could add an environment variable per region, such as `DATABASE_URL_LHR`, `DATABASE_URL_FRA` ... and so on. And then pick the appropriate one based on the value of `FLY_REGION` that is provided at run-time as an environment variable.
 
 ## Issues
 
