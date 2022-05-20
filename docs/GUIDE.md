@@ -63,6 +63,8 @@ datasource db {
 
 Since we are providing only one connection string, that _must_ be for the primary database. But if we are only providing the connection string for the primary database, any read replicas will _never_ be used.
 
+The further away the app is from the primary database, the greater the latency will be.
+
 We can do better.
 
 ### Use one database URL for reads and another for writes
@@ -82,7 +84,7 @@ connectionWrite.connect()
 
 But you now have _two_ connections to your database from every server. Which isn't _great_.
 
-It still hasn't improved the latency for writes.
+It still hasn't improved the latency for writes (they still always go to the primary database).
 
 What if the read replica is actually further away than your primary database? You have made reads _slower_.
 
@@ -90,23 +92,25 @@ And if there are multiple read replicas, how do we know which one to connect to?
 
 ### Use one database URL for reads ... and writes?
 
-Ideally we want to connect to only one database from each vm. Since we want the lowest latency we also want that to be the _closest_ database.
+Ideally we want to connect to only _one_ database from each vm. We also want that to be the _closest_ database.
 
 If you have used Fly's Postgres, you may recall this kind of thing is handled for you automatically. Simply use `your-pg-app.internal` and their DNS magic will make sure the closest database vm handles that request.
 
 Planetscale does not have a similar universal hostname. We have to select the one to connect to at run-time.
 
-We _could_ use lots of environment variables. A `DATABASE_URL_LHR`, a `DATABASE_URL_IAD` ... and so on. One per region. That approach may work better for you if you only have a few regions. You would then simply look up the appropriate connection string based on the value of the `FLY_REGION` [environment variable](https://fly.io/docs/reference/runtime-environment/#environment-variables).
+You _could_ ask for lots of environment variables. A `DATABASE_URL_LHR`, a `DATABASE_URL_IAD` ... and so on. One per region. That approach may work better for you if you only have a few regions. You would then simply look up the appropriate connection string based on the value of the `FLY_REGION` [environment variable](https://fly.io/docs/reference/runtime-environment/#environment-variables).
 
-We've taken a different approach with our sample app. We start by asking for a single `DATABASE_URL` environment variable. Its value _can_ be a single connection string. If so, its the primary database. Or it can be a comma-separated string (using a string avoids having to parse JSON objects/arrays). For example:
+We've taken a different approach with our sample app. We ask for a single `DATABASE_URL` environment variable. Its value _can_ be a single connection string. If so, it's the primary database. Or it can be a comma-separated string (consistently using a string avoids having to parse JSON objects/arrays). For example:
 
 ```toml
 DATABASE_URL='connection-string-for-primary-database,connection-string-for-a-read-only-region'
 ```
 
-We can therefore easily know whether there are any read replicas by simply checking if there is more than one connecton string. We also know which is the primary (as we specify that should always be put first).
+We can therefore easily know if there are any read replicas by simply checking if there is more than one connecton string. We _also_ know which is the primary (as we specify that must be put first).
 
-Assuming there is at least one read-only region, the question then is whether the app would get a faster response by connecting to that or by connecting to the primary. That depends on where the app is running. And Fly tells us that, at run-time. Based on that region we can choose where we would _prefer_ to connect to (these arrays would need refining based on [actual data](https://www.cloudping.co/grid)):
+Assuming there is at least one read-only region, the question then is whether the app would get a faster response by connecting to that, or the primary. That depends on where the app is running. Fly tells us that, at run-time. Based on that we can choose where we would _prefer_ to connect to:
+
+**Note:** The arrays would need refining based on [actual data](https://www.cloudping.co/grid).
 
 ```js
 switch (process.env.FLY_REGION) {
@@ -137,7 +141,25 @@ for (const dbRegion of dbRegions) {
 
 Inner loops aren't _ideal_ however this only needs to run _once_ when the vm is started and so adds no overhead. It picks the closest database to the vm. That may be a read replica or the primary.
 
-So using either of these approaches (more environment variables, or more code) we've connected to the closest database. We have reduced the latency of reads as much as possible. That's great as most requests are reads. But that still leaves _writes_: if the app is connected to a read replica and tries to modify data using an `INSERT` or `UPDATE`, that will fail. How do we handle that?
+Using either of these approaches (more environment variables or more code) we've connected to the closest database. We have reduced the latency of reads as much as possible. That's great as most requests are reads.
+
+Let's see what a difference using a read replica makes.
+
+We made a sample app and configured it to run in three Fly regions: `lhr` (UK), `sea` (US) and `syd` (Australia). Suitably distributed around the world. We initially provided that app with a single `DATABASE_URL` for our primary database in Europe. Naturally when we make a request to that app from the UK, it quickly responds. It could read the data from our database in Europe. What we want to compare is how fast reads are from far away. So we set up another Fly vm on the west coast of the US and did the same request from there. The sample data was fetched in ~150ms (the first value):
+
+```json
+{"time":147,"usingFlyRegion":"sea","usingPrimaryRegion":false,"usingDatabaseHost":"nv2ywupj5vpq.eu-west-3.psdb.cloud","data":[{"id":17,"name":"lemon"},{"id":16,"name":"blueberry"},{"id":15,"name":"grape"}]}
+```
+
+We then updated the sample app's `DATABASE_URL` to include our primary database's connection string followed by the connection strings of two read replicas. One on the west coast of the US and another in Australia. And then tried that same read request again:
+
+```json
+{"time":13,"usingFlyRegion":"sea","usingPrimaryRegion":false,"usingDatabaseHost":"us-west.connect.psdb.cloud","data":[{"id":17,"name":"lemon"},{"id":16,"name":"blueberry"},{"id":15,"name":"grape"}]}
+```
+
+Notice the dramatic reduction in latency to ~15ms (the first value). The app was able to connect to a much closer database: the read replica on the west coast of the US. Hence it was able to fetch the sample data in a fraction of the time.
+
+But that still leaves _writes_. Since the app is connected to a read replica, if it tries to modify data using an `INSERT` or `UPDATE`, that will fail. How do we handle that?
 
 ## Replay requests
 

@@ -155,6 +155,7 @@ If you now open its _read_ page `https://your-app-here.fly.dev/read` you should 
 
 ```json
 {
+  "time": 15,
   "usingFlyRegion": "lhr",
   "usingPrimaryRegion": true,
   "usingDatabaseHost": "random.eu-west-3.psdb.cloud",
@@ -179,6 +180,7 @@ If you open its _write_ page `https://your-app-here.fly.dev/write` you should se
 
 ```json
 {
+  "time": 18,
   "usingFlyRegion": "lhr",
   "usingPrimaryRegion": true,
   "usingDatabaseHost": "random.eu-west-3.psdb.cloud",
@@ -218,7 +220,9 @@ Now we need to scale the app to put a vm in each of those regions:
 fly scale count 3 --max-per-region=1
 ```
 
-You can check where they have been placed by waiting a few moments and then running `fly status`. Wait a minute until all three vms have a status of `running`:
+**Note** If you run `fly scale show` you may see `Max Per Region: Not set`. This is a known issue however the value _is_ set.
+
+Confirm the new vms have been placed by waiting a few moments and then running `fly status`. Wait a minute until all three have a status of `running`:
 
 ```
 Instances
@@ -238,7 +242,7 @@ In _our_ case, we want to make a request that will hit the Fly vm we have in the
 
 ```
 #curl https://app-name-here.fly.dev/read
-#{"usingFlyRegion":"sea","usingPrimaryRegion":false,"usingDatabaseHost":"us-west.connect.psdb.cloud","data":[{"id":9,"name":"lemon"},{"id":8,"name":"blueberry"},{"id":7,"name":"grape"}]}
+#{"time":19,"usingFlyRegion":"sea","usingPrimaryRegion":false,"usingDatabaseHost":"us-west.connect.psdb.cloud","data":[{"id":9,"name":"lemon"},{"id":8,"name":"blueberry"},{"id":7,"name":"grape"}]}
 ```
 
 Perfect! We can see from that response that the request was handled by the vm in `sea` (the closest vm _this_ app has to our simulated user in `sjc`). The response shows which database it fetched the data about our fruits from: the read-only region `us-west.connect.psdb.cloud`! This confirms it didn't need to connect to the primary database, far away in Europe. A fast, low-latency read.
@@ -247,7 +251,7 @@ Perfect! We can see from that response that the request was handled by the vm in
 
 ```
 #curl https://app-name-here.fly.dev/write
-#{"usingFlyRegion":"lhr","usingPrimaryRegion":true,"usingDatabaseHost":"random.eu-west-3.psdb.cloud","data":"Added a row with ID 10"}
+#{"time":20,"usingFlyRegion":"lhr","usingPrimaryRegion":true,"usingDatabaseHost":"random.eu-west-3.psdb.cloud","data":"Added a row with ID 10"}
 ```
 
 Perfect! We can see from that response that the request was handled in our primary region (`lhr`). And so the write succeeded. Despite the closest database to `sea` actually being a read-only replica (as shown by our prior read). But wait ... how does this work? Well, we can see by looking at the logs for this app (with `fly logs`) ...
@@ -265,6 +269,10 @@ If there is only one connection string in the `DATABASE_URL`, well no decision n
 If there are multiple connection strings in the `DATABASE_URL`, the app needs to decide which one to connect to. In `database.js` you will see it takes a rough guess at which regions it would _prefer_ to connect to (ideally the cloest). And then it sees which of those regions actually has a database. By looking for a connection string that uses a host in that region. If it can't find one, it defaults to connecting to the primary.
 
 If your app only uses a couple of regions, it may be simpler for you to instead have more environment variables and less code. You could add an environment variable per region, such as `DATABASE_URL_LHR`, `DATABASE_URL_FRA` ... and so on. And pick the appropriate connection string (based on the value of `FLY_REGION` that is provided at run-time as an environment variable).
+
+## Issues
+
+If you try deploying the app to Fly and that fails, the most _likely_ reason is your `DATABASE_URL` contains at least one invalid connection string. When each vm starts, the app tries to connect to the database. If it can't (such as the provided password is wrong) it will throw an error. You can confirm that is the case by running `fly logs` after a failed deploy. If you see a line such as `sea [info]Error: Access denied for user 'username-here'` please check all your connection strings are correct and there is no space between the commas.
 
 ## Notes
 
