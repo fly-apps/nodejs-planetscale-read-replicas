@@ -84,8 +84,8 @@ DATABASE_URL='mysql://user1:password1@region1/name?ssl={"rejectUnauthorized":tru
 ```
 5. Run `npm start`.
 6. You should be able to visit `http://localhost:3000` and see`hello world`: that confirms the app is running.
-7. Visit `http://localhost:3000/read` and you should see a list of fruits fetched from Planetscale. Note when run locally, this sample app does not know where you are in the world and so it will default to using the _first_ connection string (which should be the primary)
-8. Visit `http://localhost:3000/write` and you should see a row has been added to the Planetscale database. Normally data is added by a non-GET request however using a _GET_ makes it easier to check using a browser. Again, locally this sample app does not know where you are in the world and so it will default to using the _first_ connection string (which should be the primary)
+7. Visit `http://localhost:3000/read` and you should see a list of fruits fetched from Planetscale. Note when run locally, this sample app does not know where you are in the world and so it can't pick the closest database. It will default to using the _first_ connection string (which must be the primary).
+8. Visit `http://localhost:3000/write` and you should see a row has been added to the Planetscale database. Normally data is added by a non-GET request however using a GET makes it easier to check using a browser.
 
 You've successfully connected to a Planetscale database!
 
@@ -93,13 +93,13 @@ You've successfully connected to a Planetscale database!
 
 If you haven't already done so, [install the Fly CLI](https://fly.io/docs/getting-started/installing-flyctl/) and  then [log in to Fly](https://fly.io/docs/getting-started/log-in-to-fly/).
 
-We've added a few files to make this sample app ready to run on Fly: a `Dockerfile`, `.dockerignore` and `fly.toml`,. The `Dockerfile` tells Fly how to _package_ the application. The `.dockerignore` file specifies the files/folders we want included (else it would include ones like `.env` that we do not want). The `fly.toml` file _configures_ the application. The Fly CLI can make that for you. But since we know which variables, ports, services and so on our app needs, we made one.
+We've added a few files to make this sample app ready to run on Fly: a `Dockerfile`, `.dockerignore` and `fly.toml`. The `Dockerfile` tells Fly how to _package_ the application. The `.dockerignore` file specifies the files/folders we want included (else it would include ones like `.env` that we do not want). The `fly.toml` file _configures_ the application. The Fly CLI can make that for you. But since we know which variables, ports, services and so on our app needs, we made one.
 
-**Note:** You'll need to make two small changes to the provided `fly.toml`:
+**Note:** You'll need to make two changes to the provided `fly.toml`:
 
-1. update the app's name at the top to one of your choice `app = "your-name-here"`.
+1. Update the app's name at the top to one of your choice `app = "your-name-here"`.
 
-2. update the region to one nearest _your_ database: `PRIMARY_REGION = "lhr"`. We created _our_ database in `eu-west`. But Fly uses different region names than Planetscale. And so you need to use the Fly region you would want your primary Planetscale database to always be used from. As an example, let's say you have a Planetscale database in _eu-west-1_. You plan on having a Fly app deployed to `lhr` and `iad`. In the case you would set `PRIMARY_REGION = "lhr"` in the `fly.toml`. As that is the closest Fly region to the primary database's region (and where writes will be replayed).
+2. Update the region to one nearest _your_ database: `PRIMARY_REGION = "lhr"`. We created _our_ database in `eu-west`. But Fly uses different region names than Planetscale. And so you need to use the Fly region you would want your primary Planetscale database to always be used from. As an example, let's say you have a Planetscale database in _eu-west-1_. You plan on having a Fly app deployed to `lhr` and `iad`. In the case you would set `PRIMARY_REGION = "lhr"` in the `fly.toml`. As that is the closest Fly region to the primary database's region (and where writes will be replayed).
 
 To deploy the app, run `fly launch` from the application's directory.
 
