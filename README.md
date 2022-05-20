@@ -254,13 +254,13 @@ Perfect! We can see from that response that this request worked. It was handled 
 #{"time":20,"usingFlyRegion":"lhr","usingPrimaryRegion":true,"usingDatabaseHost":"random.eu-west-3.psdb.cloud","data":"Added a row with ID 10"}
 ```
 
-Perfect! We can see from that response that this request worked. It was handled in our primary region (`lhr`). And so the write succeeded. Despite the closest database to `sea` actually being a read-only replica. But wait ... How does this work? Well, we can see by looking at the logs for this app:
+Perfect! We can see from that response that this request worked. It was handled in our primary region (`lhr`). And so the write succeeded. Despite the closest database to `sea` actually being a read-only replica. But wait ... how does this work? Well, we can see by looking at the logs for this app:
 
 ```
 2022-05-19T19:09:42Z app[abcdefgh] sea [info]Replaying this attempt to write to a read replica (from Fly region: sea) in the primary Fly region: lhr
 ```
 
-That line is logged by our app's custom error handler (in `server.js`). The write was handled by its closest vm (in the US). And it connected to the _closest_ database (in the US). But that's a read-only replica. And so that write failed, throwing an error. That error was caught by the error handler, analysed and matched. And so the app using some Fly magic to _replay_ the request _in_ the primary region (`lhr`). And that region uses the primary database. Which _can_ be written to. And so the write worked. And much faster too.
+That line is logged by our app's custom error handler, in `server.js`. Initially the write request was received by the closest vm to the simulated user (in the US). And that vm connected to the _closest_ database (in the US). But ... that's a read-only replica. And so that write failed, throwing an error. That error was caught by the error handler, analysed and matched. And so the app used some Fly magic to _replay_ the HTTP request _in_ the primary region (in our case that's `lhr`). And a vm in that region connects to the primary database. Which _can_ of course be written to. And so the write worked.
 
 ## How does it work?
 
