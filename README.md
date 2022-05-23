@@ -288,7 +288,7 @@ If you try deploying the app to Fly and that fails, the most _likely_ reason is 
 
 - Since the usage is based on rows read (not rows fetched) make sure all of your queries are optimised. If they don't use an index, they could result in a table scan which will increase your costs.
 
-- Your appliication may _not_ benefit from adding read-only regions if it does substantially more writes than reads. In which case the saving on latency for reads may not justify the increased storage cost.
+- Your application may _not_ benefit from adding read-only regions if it does substantially more writes than reads. In which case the saving on latency for reads may not justify the increased storage cost.
 
 ## View your application on Fly
 
