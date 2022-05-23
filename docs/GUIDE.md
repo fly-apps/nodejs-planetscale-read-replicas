@@ -96,7 +96,7 @@ Ideally we want to connect to only _one_ database from each vm. We also want tha
 
 If you have used Fly's Postgres, you may recall this kind of thing is handled for you automatically. Simply use `your-pg-app.internal` and their DNS magic will make sure the closest database vm handles that request.
 
-Planetscale does not have a similar universal hostname. We have to select the one to connect to at run-time.
+Planetscale does not yet have a similar universal hostname. So we have to select the one to connect to at run-time.
 
 You _could_ ask for lots of environment variables. A `DATABASE_URL_LHR`, a `DATABASE_URL_IAD` ... and so on. One per region. That approach may work better for you if you only have a few regions. You would then simply look up the appropriate connection string based on the value of the `FLY_REGION` [environment variable](https://fly.io/docs/reference/runtime-environment/#environment-variables).
 
