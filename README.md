@@ -6,7 +6,7 @@ A sample Express app for the [Fly platform](https://fly.io) which uses a [Planet
 
 The sample app assumes a database already exists. You'll need to create that database before running the app. Since read-only regions can currently only be created using the Planetscale UI, this guide does not use their CLI.
 
-1. [Sign in to Planetscale](https://auth.planetscale.com/sign-in), creating an account if you don't already have one. You can use a free account to create a database however you will need to upgrade to their paid _Scaler_, _Teams_ or _Enterprise_ [plan](https://planetscale.com/pricing) if you would like to add read-only regions.
+1. [Sign in to Planetscale](https://auth.planetscale.com/sign-in), creating an account if you don't already have one. You can use a free account to create a database however you will need to upgrade to their paid _Scaler_, _Team_ or _Enterprise_ [plan](https://planetscale.com/pricing) if you would like to add read-only regions.
 
 2. Click on the black 'New database' button and pick 'Create new database'. Give it a name and choose its region. This is your **primary** database (we'll refer to it in multiple places later on). Choose the closest region to where you will deploy your app for the best performance:
 
