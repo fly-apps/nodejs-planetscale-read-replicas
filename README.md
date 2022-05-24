@@ -57,7 +57,7 @@ INSERT INTO `fruits` (id, name) VALUES  (3, 'strawberry');
 
 ![Screenshot](docs/img/planetscale_promote.png)
 
-11. Assuming you have a _Scaler_ or _Enterprise_ account you will be able to add addditional read-only regions. They can greatly improve the performance of your application, reducing the latency of reads from regions close to them. Click on the _main_ branch (the production one). You should see the option to _Add region_:
+11. Assuming you have a _Scaler_, _Team_ or _Enterprise_ account you will be able to add addditional read-only regions. They can greatly improve the performance of your application, reducing the latency of reads from regions close to them. Click on the _main_ branch (the production one). You should see the option to _Add region_:
 
 ![Screenshot](docs/img/planetscale_add_region.png)
 
