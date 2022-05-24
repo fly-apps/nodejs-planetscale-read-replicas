@@ -6,7 +6,7 @@ A sample Express app for the [Fly platform](https://fly.io) which uses a [Planet
 
 The sample app assumes a database already exists. You'll need to create that database before running the app. Since read-only regions can currently only be created using the Planetscale UI, this guide does not use their CLI.
 
-1. [Sign in to Planetscale](https://auth.planetscale.com/sign-in), creating an account if you don't already have one. You can use a free account to create a database however you will need to upgrade to their paid _Scaler_ or _Enterprise_ [plan](https://planetscale.com/pricing) if you would like to add read-only regions.
+1. [Sign in to Planetscale](https://auth.planetscale.com/sign-in), creating an account if you don't already have one. You can use a free account to create a database however you will need to upgrade to their paid _Scaler_, _Teams_ or _Enterprise_ [plan](https://planetscale.com/pricing) if you would like to add read-only regions.
 
 2. Click on the black 'New database' button and pick 'Create new database'. Give it a name and choose its region. This is your **primary** database (we'll refer to it in multiple places later on). Choose the closest region to where you will deploy your app for the best performance:
 
@@ -83,7 +83,7 @@ To run it locally you will need [NodeJS](https://nodejs.org/en/download/)
 DATABASE_URL='mysql://user1:password1@region1/name?ssl={"rejectUnauthorized":true},mysql://user2:password2@region2/name?ssl={"rejectUnauthorized":true}'
 ```
 5. Run `npm start`.
-6. You should be able to visit `http://localhost:3000` and see`hello world`: that confirms the app is running.
+6. You should be able to visit `http://localhost:3000` and see `hello world`: that confirms the app is running.
 7. Visit `http://localhost:3000/read` and you should see a list of fruits fetched from Planetscale. Note when run locally, this sample app does not know where you are in the world and so it can't pick the closest database. It will default to using the _first_ connection string (which must be the primary).
 8. Visit `http://localhost:3000/write` and you should see a row has been added to the Planetscale database. Normally data is added by a non-GET request however using a GET makes it easier to check using a browser.
 
